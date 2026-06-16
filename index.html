@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>CATBOOK - 小说资源查询</title>
+    <link href="https://fonts.googleapis.com/css2?family=Brush+Script+MT&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f5e6d3; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 16px; }
+        .container { max-width: 550px; width: 100%; margin: 0 auto; }
+        .cat-kaomoji { font-size: 1.8rem; text-align: center; margin-bottom: 6px; line-height: 1.2; }
+        .internal-use { font-size: 0.7rem; color: #6c757d; text-align: center; opacity: 0.7; margin-bottom: 6px; }
+        .welcome-text { font-family: 'Brush Script MT', cursive; font-size: 2rem; font-weight: bold; text-align: center; margin: 8px 0 8px; line-height: 1.2; }
+        .notice { background-color: #dbeafe; padding: 6px 12px; border-radius: 12px; text-align: center; font-size: 0.7rem; color: #374151; display: block; width: fit-content; margin: 0 auto 8px; }
+        .card { background: rgba(255, 255, 255, 0.85); border-radius: 28px; padding: 24px 22px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border: 2px solid #cbd5e1; }
+        .tip-box { background-color: #fef9e3; padding: 8px 12px; border-radius: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+        .tip-box.orange { background-color: #fff0e6; }
+        .tip-box.new-tip { background-color: #fef9e3; margin-top: 4px; margin-bottom: 12px; }
+        .search-label { margin: 16px 0 8px; font-weight: 600; font-size: 0.9rem; }
+        .search-label .note { font-size: 0.7rem; font-weight: normal; color: #6c757d; margin-left: 6px; }
+        .star { color: #ef4444; }
+        .search-input { width: 100%; padding: 12px 16px; border: 2px dashed #8b6f47; border-radius: 28px; font-size: 0.85rem; transition: 0.2s; background: white; }
+        .search-input:focus { outline: none; border-color: #d4a574; box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2); }
+        .query-btn { width: 100%; background-color: #e6f0ff; color: #333; font-weight: bold; font-size: 0.95rem; padding: 12px; border: none; border-radius: 40px; margin: 18px 0 12px; cursor: pointer; transition: 0.2s; }
+        .query-btn:hover:not(:disabled) { background-color: #d4e0ff; transform: translateY(-2px); }
+        .query-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .stats-left { text-align: left; margin-top: 6px; margin-bottom: 16px; }
+        .remain-count { font-weight: bold; color: #d35400; font-size: 0.85rem; margin-bottom: 6px; }
+        .result-stats { font-size: 0.85rem; color: #2c6e3c; font-weight: normal; display: none; }
+        .result-header { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 0 12px; }
+        .result-icon { background-color: #fed7aa; padding: 6px 12px; border-radius: 24px; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: bold; }
+        .scroll-hint { font-size: 0.7rem; color: #9ca3af; }
+        .result-list { max-height: 320px; overflow-y: auto; padding-right: 6px; }
+        .result-card { background-color: #f8f8f8; border-radius: 12px; padding: 10px; margin-bottom: 10px; border-left: 4px solid #d4a574; }
+        .result-line { margin-bottom: 5px; font-size: 0.8rem; word-break: break-all; }
+        .result-line a { color: #3b82f6; text-decoration: none; }
+        .result-line a:hover { text-decoration: underline; }
+        .no-result { text-align: center; color: #9ca3af; padding: 20px 0; font-size: 0.85rem; }
+        .tutorial-card { background-color: #f0f8f0; border-radius: 16px; padding: 16px; margin-top: 20px; }
+        .tutorial-item { margin-bottom: 12px; }
+        .tutorial-number { color: #d35400; font-weight: bold; font-size: 0.8rem; display: inline-block; width: 22px; }
+        .tutorial-title { font-weight: bold; font-size: 0.8rem; color: #d35400; }
+        .tutorial-desc { font-size: 0.8rem; font-weight: bold; margin-left: 24px; margin-top: 2px; }
+        .tutorial-example { font-size: 0.75rem; line-height: 1.45; margin-left: 24px; margin-top: 2px; color: #374151; }
+        .tutorial-text { font-size: 0.75rem; line-height: 1.45; margin-left: 24px; margin-top: 2px; color: #374151; }
+        .tutorial-bold { font-weight: bold; color: #d35400; }
+        .green-check { background-color: #e6f7e6; padding: 8px; border-radius: 8px; font-weight: bold; color: #2e7d32; font-size: 0.75rem; margin-top: 8px; }
+        .expand-btn { background: none; border: none; color: #6c5ce7; font-size: 0.75rem; cursor: pointer; margin-top: 6px; text-decoration: underline; }
+        .footer { text-align: center; color: #6b7280; font-size: 0.65rem; margin-top: 20px; }
+        .result-list::-webkit-scrollbar { width: 5px; }
+        .result-list::-webkit-scrollbar-track { background: #e5e7eb; border-radius: 10px; }
+        .result-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        @media (max-width: 480px) {
+            .cat-kaomoji { font-size: 1.5rem; }
+            .welcome-text { font-size: 1.6rem; }
+            .card { padding: 18px 16px; }
+            .search-input { font-size: 0.8rem; padding: 10px 14px; }
+            .tip-box { font-size: 0.7rem; padding: 6px 10px; }
+            .query-btn { font-size: 0.9rem; padding: 10px; }
+            .remain-count, .result-stats { font-size: 0.8rem; }
+            .result-icon { font-size: 0.8rem; }
+            .tutorial-number, .tutorial-title { font-size: 0.75rem; }
+            .tutorial-desc, .tutorial-example, .tutorial-text { font-size: 0.7rem; }
+            .search-label .note { display: block; margin-left: 0; margin-top: 4px; }
+        }
+        .loading-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2c3e50;
+            color: #fff3e0;
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 9999;
+            backdrop-filter: blur(6px);
+            background-color: rgba(44, 62, 80, 0.92);
+            white-space: normal;
+            text-align: center;
+            line-height: 1.4;
+            max-width: 90%;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+        @media (max-width: 480px) {
+            .loading-toast { font-size: 0.75rem; padding: 6px 16px; top: 12px; max-width: 85%; }
+        }
+    </style>
+</head>
+<body>
+<script>
+    (function createImmediateToast() {
+        if (window._earlyToastCreated) return;
+        window._earlyToastCreated = true;
+        var toast = document.createElement('div');
+        toast.className = 'loading-toast';
+        toast.setAttribute('data-early', 'true');
+        // 两行提示
+        toast.innerHTML = '📚 资源较多需要等待加载几秒钟~<br>🔍 搜索无结果时，尝试刷新页面（缓存原因，刷新1-2次试试）';
+        document.body.appendChild(toast);
+        setTimeout(function() {
+            if (toast && toast.parentNode) {
+                toast.style.opacity = '0';
+                setTimeout(function() {
+                    if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 500);
+            }
+        }, 30000);
+    })();
+</script>
+<script>
+    (function cleanDuplicateToasts() {
+        var interval = setInterval(function() {
+            var allToasts = document.querySelectorAll('.loading-toast');
+            if (allToasts.length <= 1) {
+                if (allToasts.length === 1 && allToasts[0].getAttribute('data-early') === 'true') {
+                    clearInterval(interval);
+                }
+                return;
+            }
+            for (var i = 0; i < allToasts.length; i++) {
+                if (allToasts[i].getAttribute('data-early') !== 'true') {
+                    if (allToasts[i].parentNode) allToasts[i].parentNode.removeChild(allToasts[i]);
+                }
+            }
+            var remaining = document.querySelectorAll('.loading-toast');
+            if (remaining.length === 1 && remaining[0].getAttribute('data-early') === 'true') {
+                clearInterval(interval);
+            }
+        }, 50);
+        setTimeout(function() { if (interval) clearInterval(interval); }, 5000);
+    })();
+</script>
+
+<div class="container">
+    <div class="cat-kaomoji">(ฅ^•ﻌ•^ฅ)</div>
+    <div class="internal-use">内部使用请勿外传</div>
+    <div class="welcome-text">WELCOME TO CATBOOK</div>
+    <div class="notice">⚠️请勿外传 | 资料来源网络版权归原作者所有！书源偶有波动，若无法下载可次日再试</div>
+
+    <div class="card">
+        <div class="tip-box"><span>💡</span> 文件需要解压，可以先输入搜索【文件解压教程】</div>
+        <div class="tip-box orange"><span>🔒</span> 书源收录各渠道，文中如有广告请勿相信</div>
+        <div class="tip-box new-tip">
+            <span>📌</span> 刚打开查询没反应属正常，资源加载需要时间~<br>输入“文件解压”有结果即表示加载完成
+        </div>
+
+        <div class="search-label"><span class="star">*</span> 文件名/关键词<span class="note">（注：资源不完美，有些存在缺字少章甚至空白乱码等）</span></div>
+        <input type="text" id="searchInput" class="search-input" placeholder="输入关键词/可以少字/勿多字错字和空格" autocomplete="off">
+        <!-- ★ 改动1：按钮添加 disabled，文字不变 -->
+        <button id="searchBtn" class="query-btn" disabled>立即查询</button>
+        <div class="stats-left">
+            <div id="remainTips" class="remain-count" style="font-size: 0.68rem;">📢 若遇到压缩包需密码，有“解压专家”APP的看能不能解，失败则换源。</div>
+            <div id="resultStats" class="result-stats">📊 共查询到 0 条结果</div>
+        </div>
+        <div class="result-header"><div class="result-icon"><i class="fas fa-list text-orange-600"></i> 查询结果</div><div class="scroll-hint">↓ 可滚动查看</div></div>
+        <div id="resultsContainer" class="result-list"><div class="no-result">⭐ 等待输入关键词</div></div>
+
+        <div class="tutorial-card" id="tutorialCard">
+            <div class="tutorial-item"><div><span class="tutorial-number">①</span><span class="tutorial-title">模糊查询</span></div><div class="tutorial-desc">— 输入文名关键词或作者名。</div><div class="tutorial-example">例：想找《今日星期五》作者:天气不错 → 可输入「星期五天气不错」或「天气不错」或「今日星期五」。</div></div>
+            <div class="tutorial-item"><div><span class="tutorial-number">②</span><span class="tutorial-title">精确查询</span></div><div class="tutorial-desc">— 结果太多时，可加限定词：完 / 完结 / 番 / 番全 / 番外 / 更 / 连载 等，再加上关键词和作者名。</div><div class="tutorial-example">例：想找「完结番全」的《今日星期五》作者:天气不错 → 输入「完番星期五天气不错」。</div></div>
+            <div id="fullTutorial" style="display: none;">
+                <div class="tutorial-item"><div><span class="tutorial-number">③</span><span class="tutorial-title">查询原理是依据文件名搜索</span></div><div class="tutorial-text"><span class="tutorial-bold">若书源里有这样的文件名：【完结番全】《今日星期五》作者:天气不错</span><br><span class="tutorial-bold">则输入：完番星期五天气不错，就会出现结果。</span><br>若无这样的文件名，输入完番等限定词就没有结果，<br>则采用上面说的模糊搜索，输入书名关键词。<br>一般的文件命名就是：<br>【完】《xccc》作者：xx<br>【更】《xccc》作者：xx<br>【番】《xccc》作者：xx<br>《xccc》作者：xx</div></div>
+                <div class="tutorial-item"><div><span class="tutorial-number">④</span><span class="tutorial-title">上述《今日星期五》作者:天气不错，仅作举例，并非真实资源。</span></div></div>
+                <div class="green-check">✅ 模糊匹配 · 可以少字 · 请勿错字空格或无关词</div>
+            </div>
+            <button id="expandTutorialBtn" class="expand-btn">▼ 展开全部教程</button>
+        </div>
+    </div>
+    <div class="footer">数据仅限内部查询 | 禁止外传 | 网址不定期更换</div>
+</div>
+
+<script src="loader.js"></script>
+<script>
+    // ============================================================
+    // 搜索逻辑（改动2：在函数开头增加数据就绪判断）
+    // ============================================================
+    function performSearch() {
+        // ★ 新增：如果数据尚未加载完成，提示用户并返回
+        if (!window.dataset || window.dataset.length === 0) {
+            document.getElementById('resultsContainer').innerHTML = 
+                '<div class="no-result">⏳ 数据加载中，请稍后再试</div>';
+            document.getElementById('resultStats').style.display = 'none';
+            return;
+        }
+
+        const keyword = document.getElementById('searchInput').value.trim();
+        if (keyword === "") {
+            document.getElementById('resultsContainer').innerHTML = '<div class="no-result">⭐ 等待输入关键词</div>';
+            document.getElementById('resultStats').style.display = 'none';
+            return;
+        }
+        const lowerKeyword = keyword.toLowerCase();
+        const matched = dataset.filter(item => item.文件名 && item.文件名.toLowerCase().includes(lowerKeyword));
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultStatsDiv = document.getElementById('resultStats');
+        if (matched.length === 0) {
+            resultsContainer.innerHTML = `<div class="no-result">😔 未找到“${escapeHtml(keyword)}”的相关资源<br><span style="font-size:12px;">试试更换关键词或多刷新几次网页</span></div>`;
+            resultStatsDiv.style.display = 'none';
+            return;
+        }
+        resultStatsDiv.style.display = 'block';
+        resultStatsDiv.innerHTML = `📊 共查询到 ${matched.length} 条结果`;
+        let html = '';
+        for (let record of matched) {
+            html += `<div class="result-card"><div class="result-line">📄 文件名：${escapeHtml(record.文件名)}</div>`;
+            for (let [key, value] of Object.entries(record)) {
+                if (key !== '文件名' && value && (key.includes('链接') || key.includes('盘'))) {
+                    html += `<div class="result-line">🔗 ${escapeHtml(key)}：<a href="${escapeHtml(value)}" target="_blank">${escapeHtml(value)}</a></div>`;
+                }
+            }
+            if (!Object.keys(record).some(k => k !== '文件名' && (k.includes('链接') || k.includes('盘')))) {
+                if (record.夸克盘链接) html += `<div class="result-line">🔗 夸克盘链接：<a href="${escapeHtml(record.夸克盘链接)}" target="_blank">${escapeHtml(record.夸克盘链接)}</a></div>`;
+                if (record.百度盘链接) html += `<div class="result-line">🔗 百度盘链接：<a href="${escapeHtml(record.百度盘链接)}" target="_blank">${escapeHtml(record.百度盘链接)}</a></div>`;
+            }
+            html += `</div>`;
+        }
+        resultsContainer.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;'));
+    }
+
+    // ============================================================
+    // 教程展开/收起（不变）
+    // ============================================================
+    const expandBtn = document.getElementById('expandTutorialBtn');
+    const fullTutorial = document.getElementById('fullTutorial');
+    let expanded = false;
+    if (expandBtn) {
+        expandBtn.addEventListener('click', () => {
+            if (!expanded) {
+                fullTutorial.style.display = 'block';
+                expandBtn.innerHTML = '▲ 收起教程';
+                expanded = true;
+            } else {
+                fullTutorial.style.display = 'none';
+                expandBtn.innerHTML = '▼ 展开全部教程';
+                expanded = false;
+            }
+        });
+    }
+
+    // ============================================================
+    // 绑定事件
+    // ============================================================
+    const searchBtn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchInput');
+    if (searchBtn) searchBtn.addEventListener('click', performSearch);
+    if (searchInput) searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
+
+    // ★ 改动3：监听数据加载完成事件，启用搜索按钮并隐藏加载提示
+    window.addEventListener('datasetReady', function() {
+        const btn = document.getElementById('searchBtn');
+        if (btn) {
+            btn.disabled = false;
+            // 文字保持“立即查询”不变
+        }
+        // 移除顶部的加载提示
+        const toast = document.querySelector('.loading-toast[data-early="true"]');
+        if (toast) {
+            toast.style.opacity = '0';
+            setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 500);
+        }
+    });
+
+    // 如果数据已经加载完成（比如在页面加载前已经触发），但还未监听，则重新触发一次
+    // 但 loader.js 会先加载，可能比这个 script 后执行，所以监听在加载前设置即可。
+</script>
+</body>
+</html>
