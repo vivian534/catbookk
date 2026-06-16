@@ -23,11 +23,47 @@
         .star { color: #ef4444; }
         .search-input { width: 100%; padding: 12px 16px; border: 2px dashed #8b6f47; border-radius: 28px; font-size: 0.85rem; transition: 0.2s; background: white; }
         .search-input:focus { outline: none; border-color: #d4a574; box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2); }
-        .query-btn { width: 100%; background-color: #e6f0ff; color: #333; font-weight: bold; font-size: 0.95rem; padding: 12px; border: none; border-radius: 40px; margin: 18px 0 12px; cursor: pointer; transition: 0.2s; }
-        .query-btn:hover:not(:disabled) { background-color: #d4e0ff; transform: translateY(-2px); }
-        .query-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* ===== 按钮样式 ===== */
+        .query-btn {
+            width: 100%;
+            font-weight: bold;
+            font-size: 0.95rem;
+            padding: 12px;
+            border: none;
+            border-radius: 40px;
+            margin: 18px 0 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        /* 禁用状态（浅灰蓝，明显不可点击） */
+        .query-btn:disabled {
+            background-color: #d5dce6;
+            color: #8a9aa8;
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        /* 启用状态（深蓝色，醒目） */
+        .query-btn:not(:disabled) {
+            background-color: #3b82f6;
+            color: #ffffff;
+        }
+        .query-btn:not(:disabled):hover {
+            background-color: #3a6380;
+            transform: translateY(-2px);
+        }
+
         .stats-left { text-align: left; margin-top: 6px; margin-bottom: 16px; }
         .remain-count { font-weight: bold; color: #d35400; font-size: 0.85rem; margin-bottom: 6px; }
+        /* 加载提示 */
+        .load-hint {
+            font-size: 0.85rem;
+            color: #b07c5a;
+            margin: 4px 0 6px;
+            font-weight: 400;
+            line-height: 1.5;
+        }
         .result-stats { font-size: 0.85rem; color: #2c6e3c; font-weight: normal; display: none; }
         .result-header { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 0 12px; }
         .result-icon { background-color: #fed7aa; padding: 6px 12px; border-radius: 24px; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: bold; }
@@ -64,6 +100,7 @@
             .tutorial-number, .tutorial-title { font-size: 0.75rem; }
             .tutorial-desc, .tutorial-example, .tutorial-text { font-size: 0.7rem; }
             .search-label .note { display: block; margin-left: 0; margin-top: 4px; }
+            .load-hint { font-size: 0.75rem; }
         }
         .loading-toast {
             position: fixed;
@@ -100,7 +137,6 @@
         var toast = document.createElement('div');
         toast.className = 'loading-toast';
         toast.setAttribute('data-early', 'true');
-        // 两行提示
         toast.innerHTML = '📚 资源较多需要等待加载几秒钟~<br>🔍 搜索无结果时，尝试刷新页面（缓存原因，刷新1-2次试试）';
         document.body.appendChild(toast);
         setTimeout(function() {
@@ -141,21 +177,25 @@
     <div class="cat-kaomoji">(ฅ^•ﻌ•^ฅ)</div>
     <div class="internal-use">内部使用请勿外传</div>
     <div class="welcome-text">WELCOME TO CATBOOK</div>
-    <div class="notice">⚠️请勿外传 | 资料来源网络版权归原作者所有！书源偶有波动，若无法下载可次日再试</div>
+    <!-- 修改1：删掉后半句 -->
+    <div class="notice">⚠️请勿外传 | 资料来源网络版权归原作者所有！</div>
 
     <div class="card">
-        <div class="tip-box"><span>💡</span> 文件需要解压，可以先输入搜索【文件解压教程】</div>
+        <!-- 修改2：改文字 -->
+        <div class="tip-box"><span>💡</span> 文件需要解压，不懂可搜索【文件解压教程】</div>
         <div class="tip-box orange"><span>🔒</span> 书源收录各渠道，文中如有广告请勿相信</div>
+        <!-- 修改3：改文字 -->
         <div class="tip-box new-tip">
-            <span>📌</span> 刚打开查询没反应属正常，资源加载需要时间~<br>输入“文件解压”有结果即表示加载完成
+            <span>📌</span> 资源加载需要时间，查询按钮变亮即可查询
         </div>
 
         <div class="search-label"><span class="star">*</span> 文件名/关键词<span class="note">（注：资源不完美，有些存在缺字少章甚至空白乱码等）</span></div>
         <input type="text" id="searchInput" class="search-input" placeholder="输入关键词/可以少字/勿多字错字和空格" autocomplete="off">
-        <!-- ★ 改动1：按钮添加 disabled，文字不变 -->
         <button id="searchBtn" class="query-btn" disabled>立即查询</button>
         <div class="stats-left">
-            <div id="remainTips" class="remain-count" style="font-size: 0.68rem;">📢 若遇到压缩包需密码，有“解压专家”APP的看能不能解，失败则换源。</div>
+            <div id="remainTips" class="remain-count" style="font-size: 0.68rem;">📢 若遇到压缩包需密码，有"解压专家"APP的看能不能解，失败则换源。</div>
+            <!-- 加载引导提示 -->
+            <div id="loadHint" class="load-hint">⏳ 首次加载较慢，之后会秒开~按钮变亮即可查询</div>
             <div id="resultStats" class="result-stats">📊 共查询到 0 条结果</div>
         </div>
         <div class="result-header"><div class="result-icon"><i class="fas fa-list text-orange-600"></i> 查询结果</div><div class="scroll-hint">↓ 可滚动查看</div></div>
@@ -178,10 +218,9 @@
 <script src="loader.js"></script>
 <script>
     // ============================================================
-    // 搜索逻辑（改动2：在函数开头增加数据就绪判断）
+    // 搜索逻辑
     // ============================================================
     function performSearch() {
-        // ★ 新增：如果数据尚未加载完成，提示用户并返回
         if (!window.dataset || window.dataset.length === 0) {
             document.getElementById('resultsContainer').innerHTML = 
                 '<div class="no-result">⏳ 数据加载中，请稍后再试</div>';
@@ -200,7 +239,7 @@
         const resultsContainer = document.getElementById('resultsContainer');
         const resultStatsDiv = document.getElementById('resultStats');
         if (matched.length === 0) {
-            resultsContainer.innerHTML = `<div class="no-result">😔 未找到“${escapeHtml(keyword)}”的相关资源<br><span style="font-size:12px;">试试更换关键词或多刷新几次网页</span></div>`;
+            resultsContainer.innerHTML = `<div class="no-result">😔 未找到"${escapeHtml(keyword)}"的相关资源<br><span style="font-size:12px;">试试更换关键词或多刷新几次网页</span></div>`;
             resultStatsDiv.style.display = 'none';
             return;
         }
@@ -229,7 +268,7 @@
     }
 
     // ============================================================
-    // 教程展开/收起（不变）
+    // 教程展开/收起
     // ============================================================
     const expandBtn = document.getElementById('expandTutorialBtn');
     const fullTutorial = document.getElementById('fullTutorial');
@@ -256,23 +295,23 @@
     if (searchBtn) searchBtn.addEventListener('click', performSearch);
     if (searchInput) searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
 
-    // ★ 改动3：监听数据加载完成事件，启用搜索按钮并隐藏加载提示
+    // 数据加载完成，启用按钮，更新提示
     window.addEventListener('datasetReady', function() {
         const btn = document.getElementById('searchBtn');
         if (btn) {
             btn.disabled = false;
-            // 文字保持“立即查询”不变
         }
-        // 移除顶部的加载提示
+        const hint = document.getElementById('loadHint');
+        if (hint) {
+            hint.innerHTML = '✅ 加载完成，可以开始搜索啦~';
+            hint.style.color = '#2c6e3c';
+        }
         const toast = document.querySelector('.loading-toast[data-early="true"]');
         if (toast) {
             toast.style.opacity = '0';
             setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 500);
         }
     });
-
-    // 如果数据已经加载完成（比如在页面加载前已经触发），但还未监听，则重新触发一次
-    // 但 loader.js 会先加载，可能比这个 script 后执行，所以监听在加载前设置即可。
 </script>
 </body>
 </html>
