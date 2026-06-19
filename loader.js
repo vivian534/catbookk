@@ -1,96 +1,104 @@
 // ============================================================
-//  CatBook 数据加载器 v2.1（精简版 - 分批加载 + 无进度）
+//  CatBook 数据加载器 v5.0（极速首发版 - 25MB 即可搜索）
 // ============================================================
 
-// ★★★★★ 每次添加新资源时，修改下面两个配置 ★★★★★
 const DATA_VERSION = '20260616';     // 改成当天日期
-const MAX_PART_NUMBER = 57;          // 改成你最新的 part 文件编号
-const BATCH_SIZE = 5;                // 每批同时加载 5 个
-
-// ============================================================
-
-window.dataset = window.dataset || [];
+const MAX_PART_NUMBER = 4;           // 你合并成了 4 个
 let loadedCount = 0;
-let currentIndex = 1;
+let isEarlyReady = false;            // 是否已提前解锁搜索
 let isAllDone = false;
 
-// 全部加载完成
+window.dataset = window.dataset || [];
+
+// 加载单个 part 文件
+function loadPart(index) {
+    const script = document.createElement('script');
+    script.src = `part_${index}.js?v=${DATA_VERSION}`;
+
+    script.onload = () => {
+        const partData = window[`_part${index}`];
+        if (partData && Array.isArray(partData)) {
+            window.dataset.push(...partData);
+            console.log(`✅ part_${index}.js 加载完成，累计 ${window.dataset.length} 条`);
+        } else {
+            console.warn(`⚠️ part_${index}.js 数据无效`);
+        }
+        delete window[`_part${index}`];
+        loadedCount++;
+
+        // ========== 🚀 核心改动：只要第一个文件加载完，就亮按钮 ==========
+        if (!isEarlyReady && loadedCount >= 1) {
+            isEarlyReady = true;
+            console.log('⚡ 首批数据就绪（25MB），提前解锁搜索按钮！');
+            // 触发页面中的 datasetReady 事件，让“立即查询”变亮
+            if (typeof window.dispatchEvent === 'function') {
+                window.dispatchEvent(new Event('datasetReady'));
+            }
+            // 修改页面提示文字
+            const hint = document.getElementById('loadHint');
+            if (hint) {
+                hint.innerHTML = '⚡ 基础数据已就绪，剩余资源后台加载中（不影响搜索）';
+                hint.style.color = '#d35400';
+            }
+            // 关掉顶部的 loading toast
+            const toast = document.querySelector('.loading-toast[data-early="true"]');
+            if (toast) {
+                toast.style.opacity = '0';
+                setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 500);
+            }
+        }
+
+        // 检查是否全部加载完成（用于最终统计）
+        if (loadedCount === MAX_PART_NUMBER) {
+            allDone();
+        }
+    };
+
+    script.onerror = () => {
+        console.error(`❌ part_${index}.js 加载失败，已跳过`);
+        loadedCount++;
+        if (loadedCount === MAX_PART_NUMBER) {
+            allDone();
+        }
+    };
+
+    document.head.appendChild(script);
+}
+
+// 全部加载完成（最终收尾，不影响搜索功能）
 function allDone() {
     if (isAllDone) return;
     isAllDone = true;
-    console.log(`🎉 所有 ${MAX_PART_NUMBER} 个 part 文件加载完成，总计 ${window.dataset.length} 条`);
-    if (typeof window.dispatchEvent === 'function') {
-        window.dispatchEvent(new Event('datasetReady'));
-    }
-    if (typeof window.onDatasetReady === 'function') {
-        window.onDatasetReady(window.dataset);
-    }
-}
+    console.log(`🎉 全部 ${MAX_PART_NUMBER} 个文件加载完成，总计 ${window.dataset.length} 条`);
 
-// 加载一批文件
-function loadBatch() {
-    if (isAllDone) return;
-
-    const end = Math.min(currentIndex + BATCH_SIZE - 1, MAX_PART_NUMBER);
-    let loadedInBatch = 0;
-    const totalInBatch = end - currentIndex + 1;
-
-    for (let i = currentIndex; i <= end; i++) {
-        const script = document.createElement('script');
-        script.src = `part_${i}.js?v=${DATA_VERSION}`;
-
-        script.onload = () => {
-            const partData = window[`_part${i}`];
-            if (partData && Array.isArray(partData)) {
-                window.dataset.push(...partData);
-                console.log(`✅ part_${i}.js 加载完成，累计 ${window.dataset.length}`);
-            } else {
-                console.warn(`⚠️ part_${i}.js 数据无效`);
-            }
-            delete window[`_part${i}`];
-            loadedCount++;
-            loadedInBatch++;
-
-            if (loadedInBatch === totalInBatch) {
-                currentIndex = end + 1;
-                if (currentIndex <= MAX_PART_NUMBER) {
-                    setTimeout(loadBatch, 150);
-                } else {
-                    allDone();
-                }
-            }
-        };
-
-        script.onerror = () => {
-            console.error(`❌ part_${i}.js 加载失败，已跳过`);
-            loadedCount++;
-            loadedInBatch++;
-
-            if (loadedInBatch === totalInBatch) {
-                currentIndex = end + 1;
-                if (currentIndex <= MAX_PART_NUMBER) {
-                    setTimeout(loadBatch, 150);
-                } else {
-                    allDone();
-                }
-            }
-        };
-
-        document.head.appendChild(script);
-    }
-}
-
-// 启动加载
-console.log('🔄 开始分批加载 part 文件，每批', BATCH_SIZE, '个');
-loadBatch();
-
-// 兜底：5分钟后强制启用
-setTimeout(function() {
-    if (!isAllDone) {
-        console.warn('⏰ 加载超时，强制启用');
+    // 如果提前解锁时没触发过（兜底），这里再触发一次
+    if (!isEarlyReady) {
         if (typeof window.dispatchEvent === 'function') {
             window.dispatchEvent(new Event('datasetReady'));
         }
-        isAllDone = true;
     }
-}, 300000);
+
+    // 更新最终提示
+    const hint = document.getElementById('loadHint');
+    if (hint && isEarlyReady) {
+        hint.innerHTML = `✅ 全部资源加载完成（共 ${window.dataset.length} 条），可搜索`;
+        hint.style.color = '#2c6e3c';
+    }
+}
+
+// ========== 启动加载：一次性并行加载全部 4 个 ==========
+console.log('🚀 开始并行加载 4 个数据包（25MB × 4）...');
+for (let i = 1; i <= MAX_PART_NUMBER; i++) {
+    loadPart(i);
+}
+
+// 兜底：万一第一个文件加载失败卡住，40秒后强制亮按钮
+setTimeout(function() {
+    if (!isEarlyReady) {
+        console.warn('⏰ 首个文件加载超时，强制启用搜索（可能数据不全）');
+        if (typeof window.dispatchEvent === 'function') {
+            window.dispatchEvent(new Event('datasetReady'));
+        }
+        isEarlyReady = true;
+    }
+}, 40000);
