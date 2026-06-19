@@ -36,7 +36,6 @@
             cursor: pointer;
             transition: 0.2s;
         }
-        /* 禁用状态（浅灰蓝，明显不可点击） */
         .query-btn:disabled {
             background-color: #d5dce6;
             color: #8a9aa8;
@@ -44,7 +43,6 @@
             cursor: not-allowed;
             transform: none;
         }
-        /* 启用状态（深蓝色，醒目） */
         .query-btn:not(:disabled) {
             background-color: #3b82f6;
             color: #ffffff;
@@ -56,7 +54,6 @@
 
         .stats-left { text-align: left; margin-top: 6px; margin-bottom: 16px; }
         .remain-count { font-weight: bold; color: #d35400; font-size: 0.85rem; margin-bottom: 6px; }
-        /* 加载提示 */
         .load-hint {
             font-size: 0.85rem;
             color: #b07c5a;
@@ -127,9 +124,80 @@
         @media (max-width: 480px) {
             .loading-toast { font-size: 0.75rem; padding: 6px 16px; top: 12px; max-width: 85%; }
         }
+
+        /* ===== 悬浮提示样式（可拖动 + 可关闭） ===== */
+        .floating-tip {
+            position: fixed;
+            bottom: 22px;
+            right: 22px;
+            background: rgba(44, 62, 80, 0.88);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff3e0;
+            padding: 12px 16px 12px 16px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            max-width: 230px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            line-height: 1.7;
+            border-left: 4px solid #fbbf24;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: box-shadow 0.2s;
+            letter-spacing: 0.3px;
+        }
+        .floating-tip:active {
+            cursor: grabbing;
+        }
+        .floating-tip.dragging {
+            box-shadow: 0 8px 35px rgba(0, 0, 0, 0.45);
+            cursor: grabbing;
+        }
+        .floating-tip .close-btn {
+            position: absolute;
+            top: 2px;
+            right: 6px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1.4;
+            transition: color 0.2s;
+            pointer-events: auto;
+            font-weight: 300;
+        }
+        .floating-tip .close-btn:hover {
+            color: #fff;
+        }
+        .floating-tip .tip-body {
+            padding-right: 18px;
+            pointer-events: none;
+        }
+        @media (max-width: 480px) {
+            .floating-tip {
+                bottom: 12px;
+                right: 12px;
+                font-size: 0.6rem;
+                padding: 10px 12px 10px 12px;
+                max-width: 160px;
+                border-left-width: 3px;
+                line-height: 1.6;
+            }
+            .floating-tip .close-btn {
+                font-size: 0.85rem;
+                top: 0px;
+                right: 4px;
+            }
+        }
     </style>
 </head>
 <body>
+
+<!-- ===== 顶部加载提示 ===== -->
 <script>
     (function createImmediateToast() {
         if (window._earlyToastCreated) return;
@@ -173,18 +241,16 @@
     })();
 </script>
 
+<!-- ===== 主页面 ===== -->
 <div class="container">
     <div class="cat-kaomoji">(ฅ^•ﻌ•^ฅ)</div>
     <div class="internal-use">内部使用请勿外传</div>
     <div class="welcome-text">WELCOME TO CATBOOK</div>
-    <!-- 修改1：删掉后半句 -->
     <div class="notice">⚠️请勿外传 | 资料来源网络版权归原作者所有！</div>
 
     <div class="card">
-        <!-- 修改2：改文字 -->
         <div class="tip-box"><span>💡</span> 文件需要解压，不懂可搜索【文件解压教程】</div>
         <div class="tip-box orange"><span>🔒</span> 书源收录各渠道，文中如有广告请勿相信</div>
-        <!-- 修改3：改文字 -->
         <div class="tip-box new-tip">
             <span>📌</span> 资源加载需要时间，查询按钮变亮即可查询
         </div>
@@ -194,7 +260,6 @@
         <button id="searchBtn" class="query-btn" disabled>立即查询</button>
         <div class="stats-left">
             <div id="remainTips" class="remain-count" style="font-size: 0.68rem;">📢 若遇到压缩包需密码，有"解压专家"APP的看能不能解，失败则换源。</div>
-            <!-- 加载引导提示 -->
             <div id="loadHint" class="load-hint">⏳ 首次加载较慢，之后会秒开~按钮变亮即可查询</div>
             <div id="resultStats" class="result-stats">📊 共查询到 0 条结果</div>
         </div>
@@ -215,7 +280,10 @@
     <div class="footer">数据仅限内部查询 | 禁止外传 | 网址不定期更换</div>
 </div>
 
+<!-- ===== 加载数据 ===== -->
 <script src="loader.js"></script>
+
+<!-- ===== 搜索 + 教程逻辑 ===== -->
 <script>
     // ============================================================
     // 搜索逻辑
@@ -313,5 +381,116 @@
         }
     });
 </script>
+
+<!-- ===== 悬浮提示（HTML 元素） ===== -->
+<div class="floating-tip">
+    <button class="close-btn" aria-label="关闭提示">×</button>
+    <div class="tip-body">
+        💡 网页若长时间无反应，<br>复制网址换一个浏览器打开，<br>目前一直正常可用~
+    </div>
+</div>
+
+<!-- ===== 悬浮提示的 JavaScript（放在元素后面，确保能选中） ===== -->
+<script>
+    (function initFloatingTip() {
+        var tip = document.querySelector('.floating-tip');
+        if (!tip) {
+            console.warn('找不到 .floating-tip 元素');
+            return;
+        }
+
+        var closeBtn = tip.querySelector('.close-btn');
+        var isDragging = false;
+        var startX, startY, offsetX, offsetY;
+
+        // 关闭功能
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                tip.style.display = 'none';
+            });
+        }
+
+        // 鼠标拖拽
+        tip.addEventListener('mousedown', function(e) {
+            if (e.target.closest('.close-btn')) return;
+            isDragging = true;
+            var rect = tip.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            tip.classList.add('dragging');
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            var newLeft = e.clientX - offsetX;
+            var newTop = e.clientY - offsetY;
+            var maxX = window.innerWidth - tip.offsetWidth - 10;
+            var maxY = window.innerHeight - tip.offsetHeight - 10;
+            newLeft = Math.max(10, Math.min(newLeft, maxX));
+            newTop = Math.max(10, Math.min(newTop, maxY));
+            tip.style.left = newLeft + 'px';
+            tip.style.top = newTop + 'px';
+            tip.style.right = 'auto';
+            tip.style.bottom = 'auto';
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                tip.classList.remove('dragging');
+            }
+        });
+
+        // 触屏拖拽（手机）
+        tip.addEventListener('touchstart', function(e) {
+            if (e.target.closest('.close-btn')) return;
+            var touch = e.touches[0];
+            var rect = tip.getBoundingClientRect();
+            offsetX = touch.clientX - rect.left;
+            offsetY = touch.clientY - rect.top;
+            isDragging = true;
+            tip.classList.add('dragging');
+        }, { passive: true });
+
+        tip.addEventListener('touchmove', function(e) {
+            if (!isDragging) return;
+            var touch = e.touches[0];
+            var newLeft = touch.clientX - offsetX;
+            var newTop = touch.clientY - offsetY;
+            var maxX = window.innerWidth - tip.offsetWidth - 10;
+            var maxY = window.innerHeight - tip.offsetHeight - 10;
+            newLeft = Math.max(10, Math.min(newLeft, maxX));
+            newTop = Math.max(10, Math.min(newTop, maxY));
+            tip.style.left = newLeft + 'px';
+            tip.style.top = newTop + 'px';
+            tip.style.right = 'auto';
+            tip.style.bottom = 'auto';
+            e.preventDefault();
+        }, { passive: false });
+
+        tip.addEventListener('touchend', function() {
+            if (isDragging) {
+                isDragging = false;
+                tip.classList.remove('dragging');
+            }
+        }, { passive: true });
+
+        // 窗口大小变化时调整边界
+        window.addEventListener('resize', function() {
+            var rect = tip.getBoundingClientRect();
+            var maxX = window.innerWidth - tip.offsetWidth - 10;
+            var maxY = window.innerHeight - tip.offsetHeight - 10;
+            if (rect.left > maxX || rect.top > maxY) {
+                tip.style.left = Math.min(rect.left, maxX) + 'px';
+                tip.style.top = Math.min(rect.top, maxY) + 'px';
+            }
+        });
+
+        console.log('✅ 悬浮提示已初始化（可拖动 + 可关闭）');
+    })();
+</script>
+
 </body>
 </html>
