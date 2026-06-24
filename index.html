@@ -54,12 +54,48 @@
 
         .stats-left { text-align: left; margin-top: 6px; margin-bottom: 16px; }
         .remain-count { font-weight: bold; color: #d35400; font-size: 0.85rem; margin-bottom: 6px; }
+        /* ===== 进度条样式 ===== */
         .load-hint {
             font-size: 0.85rem;
             color: #b07c5a;
             margin: 4px 0 6px;
             font-weight: 400;
             line-height: 1.5;
+        }
+        .load-hint .progress-emoji { font-size: 1.2rem; display: inline-block; }
+        .progress-wrap {
+            width: 100%;
+            background: #e8ddd0;
+            border-radius: 30px;
+            margin-top: 6px;
+            height: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+        .progress-wrap .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #f9a825, #ff6f00);
+            border-radius: 30px;
+            transition: width 0.4s ease;
+            position: relative;
+        }
+        .progress-wrap .paw-print {
+            position: absolute;
+            top: -2px;
+            font-size: 0.9rem;
+            transition: left 0.4s ease;
+            pointer-events: none;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+        }
+        .load-hint .funny-text {
+            font-size: 0.8rem;
+            color: #7f6b5d;
+            margin-top: 4px;
+            font-style: italic;
+            min-height: 1.6em;
+            transition: opacity 0.3s;
         }
         .result-stats { font-size: 0.85rem; color: #2c6e3c; font-weight: normal; display: none; }
         .result-header { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 0 12px; }
@@ -98,6 +134,7 @@
             .tutorial-desc, .tutorial-example, .tutorial-text { font-size: 0.7rem; }
             .search-label .note { display: block; margin-left: 0; margin-top: 4px; }
             .load-hint { font-size: 0.75rem; }
+            .progress-wrap { height: 10px; }
         }
         .loading-toast {
             position: fixed;
@@ -252,7 +289,7 @@
         <div class="tip-box"><span>💡</span> 文件需要解压，不懂可搜索【文件解压教程】</div>
         <div class="tip-box orange"><span>🔒</span> 书源收录各渠道，文中如有广告请勿相信</div>
         <div class="tip-box new-tip">
-            <span>📌</span> 资源加载需要时间，查询按钮变亮即可查询
+            <span>📌</span> 刚打开搜不到属正常，资源加载需要时间~稍等一会
         </div>
 
         <div class="search-label"><span class="star">*</span> 文件名/关键词<span class="note">（注：资源不完美，有些存在缺字少章甚至空白乱码等）</span></div>
@@ -260,7 +297,18 @@
         <button id="searchBtn" class="query-btn" disabled>立即查询</button>
         <div class="stats-left">
             <div id="remainTips" class="remain-count" style="font-size: 0.68rem;">📢 若遇到压缩包需密码，有"解压专家"APP的看能不能解，失败则换源。</div>
-            <div id="loadHint" class="load-hint">⏳ 首次加载较慢，之后会秒开~按钮变亮即可查询</div>
+            <!-- ===== 进度条 ===== -->
+            <div id="loadHint" class="load-hint">
+                <div>
+                    <span id="progressText">后台正在加载资源... 0%</span>
+                </div>
+                <div class="progress-wrap">
+                    <div id="progressBar" class="progress-bar" style="width:0%;"></div>
+                    <span id="pawPrint" class="paw-print" style="left:0%;">🐾</span>
+                </div>
+                <div id="funnyText" class="funny-text">ฅ^•ﻌ•^ฅ 喵正在努力翻书，稍等一下~</div>
+            </div>
+            <!-- ===== 进度条结束 ===== -->
             <div id="resultStats" class="result-stats">📊 共查询到 0 条结果</div>
         </div>
         <div class="result-header"><div class="result-icon"><i class="fas fa-list text-orange-600"></i> 查询结果</div><div class="scroll-hint">↓ 可滚动查看</div></div>
@@ -281,9 +329,9 @@
 </div>
 
 <!-- ===== 加载数据 ===== -->
-<script src="loader.js"></script>
+<script src="loader.js?v=1"></script>
 
-<!-- ===== 搜索 + 教程逻辑 ===== -->
+<!-- ===== 搜索 + 教程逻辑 + 进度更新 ===== -->
 <script>
     // ============================================================
     // 搜索逻辑
@@ -356,6 +404,48 @@
     }
 
     // ============================================================
+    // 进度条更新函数（由 loader.js 调用）
+    // ============================================================
+    window.updateProgress = function(loaded, total) {
+        var pct = Math.min(Math.round((loaded / total) * 100), 100);
+        var bar = document.getElementById('progressBar');
+        var paw = document.getElementById('pawPrint');
+        var text = document.getElementById('progressText');
+        var funny = document.getElementById('funnyText');
+
+        if (bar) bar.style.width = pct + '%';
+        if (paw) paw.style.left = Math.min(pct, 95) + '%';
+
+        // ===== 趣味文案（根据进度变化） =====
+        var msgs = [
+            'ฅ^•ﻌ•^ฅ 喵正在努力翻书，稍等一下~',
+            '📖 翻翻这本... 再翻翻那本...',
+            '🔍 喵~ 正在努力寻找中！',
+            '📚 书山有路喵为径~',
+            '✨ 马上就好！再等一下下！',
+            '🐾 尾巴摇摇~ 资源快到碗里来！',
+            '☕ 泡杯茶的时间，马上就好~',
+            '🎯 锁定目标！正在搬运书籍...',
+            '💪 加油！马上就全部找到了！'
+        ];
+        var idx = Math.min(Math.floor(pct / 12), msgs.length - 1);
+        if (funny && msgs[idx]) funny.textContent = msgs[idx];
+
+        if (pct < 100) {
+            if (text) text.textContent = '后台正在加载资源... ' + pct + '%';
+        } else {
+            // ===== 修复：显示实际数据条数，而不是 part 文件数量 =====
+            var count = (window.dataset && window.dataset.length) ? window.dataset.length : total;
+            if (text) text.textContent = '✅ 全部资源加载完成（共 ' + count + ' 条），可搜索';
+            if (funny) funny.textContent = '';
+            // ===== 修复结束 =====
+        }
+    };
+
+    // 初始化进度（0%）
+    window.updateProgress(0, window.MAX_PART_NUMBER || 5);
+
+    // ============================================================
     // 绑定事件
     // ============================================================
     const searchBtn = document.getElementById('searchBtn');
@@ -369,16 +459,20 @@
         if (btn) {
             btn.disabled = false;
         }
-        const hint = document.getElementById('loadHint');
-        if (hint) {
-            hint.innerHTML = '✅ 加载完成，可以开始搜索啦~';
-            hint.style.color = '#2c6e3c';
+        // 如果已经全部加载完成，更新进度到 100%
+        if (window.isAllDone) {
+            window.updateProgress(window.MAX_PART_NUMBER || 5, window.MAX_PART_NUMBER || 5);
         }
         const toast = document.querySelector('.loading-toast[data-early="true"]');
         if (toast) {
             toast.style.opacity = '0';
             setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 500);
         }
+    });
+
+    // 监听全部加载完成
+    window.addEventListener('allDone', function() {
+        window.updateProgress(window.MAX_PART_NUMBER || 5, window.MAX_PART_NUMBER || 5);
     });
 </script>
 
@@ -490,6 +584,22 @@
 
         console.log('✅ 悬浮提示已初始化（可拖动 + 可关闭）');
     })();
+</script>
+
+<!-- ===== 注册 Service Worker ===== -->
+<script>
+    // 注册 Service Worker，让资源被浏览器长期缓存，二次打开秒开
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js?v=1')
+                .then(function(registration) {
+                    console.log('✅ Service Worker 注册成功');
+                })
+                .catch(function(error) {
+                    console.warn('❌ Service Worker 注册失败:', error);
+                });
+        });
+    }
 </script>
 
 </body>
