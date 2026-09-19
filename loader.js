@@ -3,7 +3,7 @@
 // ============================================================
 
 const DATA_VERSION = '20260616';     // 改成当天日期
-const MAX_PART_NUMBER = 5;           // 你合并成了 4 个
+const MAX_PART_NUMBER = 6;           // 你合并成了 4 个
 let loadedCount = 0;
 let isEarlyReady = false;            // 是否已提前解锁搜索
 let isAllDone = false;
